@@ -17,17 +17,24 @@ const OPTIONS: {
     { label: '2+ stops', value: 2 },
   ]
 
-export function StopFilter({
-  value,
-  onChange,
-}: StopFilterProps) {
+export function StopFilter({ value, onChange }: StopFilterProps) {
   return (
-    <div className="rounded-xl bg-surface p-4">
-      <h3 className="mb-3 text-sm font-medium text-text-muted">
+    <fieldset
+      className="rounded-xl bg-surface p-4"
+      aria-labelledby="stops-filter-label"
+    >
+      <legend
+        id="stops-filter-label"
+        className="mb-3 text-sm font-medium text-text-muted"
+      >
         Stops
-      </h3>
+      </legend>
 
-      <div className="flex flex-wrap gap-2">
+      <div
+        className="flex flex-wrap gap-2"
+        role="radiogroup"
+        aria-describedby="stops-filter-label"
+      >
         {OPTIONS.map((option) => {
           const isActive = value === option.value
 
@@ -35,9 +42,12 @@ export function StopFilter({
             <button
               key={String(option.value)}
               type="button"
+              role="radio"
+              aria-checked={isActive}
               onClick={() => onChange(option.value)}
               className={`
                 rounded-md px-3 py-1.5 text-sm transition
+                focus:outline-none focus:ring-2 focus:ring-primary
                 ${isActive
                   ? 'bg-primary text-background'
                   : 'bg-background text-text hover:bg-surface-muted'
@@ -49,6 +59,6 @@ export function StopFilter({
           )
         })}
       </div>
-    </div>
+    </fieldset>
   )
 }

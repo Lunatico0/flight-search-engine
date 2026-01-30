@@ -1,8 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type SearchFormProps = {
+  initialValues?: {
+    origin: string
+    destination: string
+    date: string
+  }
   onSearch: (params: {
     origin: string
     destination: string
@@ -10,26 +15,27 @@ type SearchFormProps = {
   }) => void
 }
 
-export function SearchForm({ onSearch }: SearchFormProps) {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const today = `${yyyy}-${mm}-${dd}`;
+export function SearchForm({ onSearch, initialValues }: SearchFormProps) {
+  const now = new Date()
+  const today = now.toISOString().slice(0, 10)
 
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [date, setDate] = useState(today);
+  const [origin, setOrigin] = useState(initialValues?.origin ?? '')
+  const [destination, setDestination] = useState(initialValues?.destination ?? '')
+  const [date, setDate] = useState(initialValues?.date ?? today)
 
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault()
+  // 🔑 sincroniza cuando cambia la URL
+  useEffect(() => {
+    if (!initialValues) return
 
-    onSearch({
-      origin,
-      destination,
-      date,
-    })
-  };
+    setOrigin(initialValues.origin)
+    setDestination(initialValues.destination)
+    setDate(initialValues.date)
+  }, [initialValues])
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    onSearch({ origin, destination, date })
+  }
 
   const fieldClass =
     " peer w-full rounded-md border border-border bg-background px-3 pt-5 pb-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary";
@@ -57,7 +63,7 @@ export function SearchForm({ onSearch }: SearchFormProps) {
           className="
             pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-muted transition-all
             peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary
-            peer-[&:not(:placeholder-shown)]:top-2 peer-[&:not(:placeholder-shown)]:translate-y-0 peer-[&:not(:placeholder-shown)]:text-xs
+            peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs
           "
         >
           Origin (e.g. EZE)
@@ -82,7 +88,7 @@ export function SearchForm({ onSearch }: SearchFormProps) {
           className="
             pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-muted transition-all
             peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary
-            peer-[&:not(:placeholder-shown)]:top-2 peer-[&:not(:placeholder-shown)]:translate-y-0 peer-[&:not(:placeholder-shown)]:text-xs
+            peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs
           "
         >
           Destination (e.g. JFK)
@@ -105,7 +111,7 @@ export function SearchForm({ onSearch }: SearchFormProps) {
           className="
             pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-muted transition-all
             peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary
-            peer-[&:not(:placeholder-shown)]:top-2 peer-[&:not(:placeholder-shown)]:translate-y-0 peer-[&:not(:placeholder-shown)]:text-xs
+            peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:text-xs
           "
         >
           Date
