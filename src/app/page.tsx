@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import HomeClientWrapper from './HomeClientWrapper'
 
 export default function Page() {
@@ -11,7 +12,9 @@ export default function Page() {
           </p>
         </header>
 
-        <HomeClientWrapper />
+        <Suspense fallback={null}>
+          <HomeClientWrapper />
+        </Suspense>
       </div>
     </main>
   )
