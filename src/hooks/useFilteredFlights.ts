@@ -58,7 +58,10 @@ function parseFiltersFromUrl(
   }
 }
 
-export function useFilteredFlights(flights: Flight[]) {
+export function useFilteredFlights(
+  flights: Flight[],
+  searchKey: string | null
+) {
   /* ---------------- Derived bounds ---------------- */
 
   const priceBounds = useMemo(
@@ -79,14 +82,15 @@ export function useFilteredFlights(flights: Flight[]) {
   /* ---------------- Hydrate from URL (once) ---------------- */
 
   useEffect(() => {
-    if (hasHydratedFromUrl.current) return
+    if (!searchKey) return
     if (flights.length === 0) return
 
-    const urlFilters = parseFiltersFromUrl(priceBounds)
-    setFilters(urlFilters)
-
-    hasHydratedFromUrl.current = true
-  }, [flights.length, priceBounds.min, priceBounds.max])
+    setFilters({
+      stops: 'any',
+      priceRange: priceBounds,
+      airlines: [],
+    })
+  }, [searchKey, priceBounds.min, priceBounds.max])
 
   /* ---------------- Reset on new dataset ---------------- */
 
