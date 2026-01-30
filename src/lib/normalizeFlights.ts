@@ -4,6 +4,11 @@ export function normalizeFlights(
   amadeusResponse: any
 ): Flight[] {
   const flights = amadeusResponse.data
+
+  if (!Array.isArray(flights)) {
+    return []
+  }
+
   const carriers = amadeusResponse.dictionaries?.carriers ?? {}
 
   return flights.map((offer: any) => {
@@ -13,11 +18,11 @@ export function normalizeFlights(
     const departure = segments[0]
     const arrival = segments[segments.length - 1]
 
-    const airlineCode = offer.validatingAirlineCodes[0]
+    const airlineCode = offer.validatingAirlineCodes?.[0]
 
     return {
       id: offer.id,
-      airline: carriers[airlineCode] ?? airlineCode,
+      airline: carriers[airlineCode] ?? airlineCode ?? 'Unknown',
       price: Number(offer.price.total),
       stops: segments.length - 1,
       departureTime: departure.departure.at,

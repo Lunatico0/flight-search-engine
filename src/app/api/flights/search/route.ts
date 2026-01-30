@@ -38,7 +38,11 @@ export async function GET(req: NextRequest) {
   })
 
   const rawData = await res.json();
-  const flights = normalizeFlights(rawData);
 
+  if (!res.ok) {
+    return NextResponse.json([], { status: 200 })
+  }
+
+  const flights = normalizeFlights(rawData);
   return NextResponse.json(flights)
 }

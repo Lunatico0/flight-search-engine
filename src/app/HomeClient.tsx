@@ -17,8 +17,9 @@ import { StopFilter } from '@/components/Filters/StopsFilter'
 import { FiltersSkeleton } from '@/components/Filters/FiltersSkeleton'
 import { SortSelect } from '@/components/SortSelect'
 import dynamic from 'next/dynamic'
+import { NoResults } from '@/components/NoResults/NoResults'
 const FlightDetailsModal = dynamic(
-  () => import('../components/FlightDetailsModal').then(m => m.FlightDetailsModal),
+  () => import('@/components/FlightDetailsModal').then(m => m.FlightDetailsModal),
   { ssr: false }
 )
 
@@ -69,6 +70,7 @@ export default function HomeClient({ initialSearch }: HomeClientProps) {
     setPriceRange,
     setStops,
     setSort,
+    resetFilters,
   } = useFilteredFlights(flights, searchKey)
 
   // STATE → URL
@@ -115,6 +117,12 @@ export default function HomeClient({ initialSearch }: HomeClientProps) {
     [isSuccess, flights]
   )
 
+  const hasActiveFilters =
+    filters.stops !== 'any' ||
+    filters.airlines.length > 0 ||
+    filters.priceRange.min !== priceBounds.min ||
+    filters.priceRange.max !== priceBounds.max
+
   return (
     <>
       {/* Search */}
@@ -129,6 +137,7 @@ export default function HomeClient({ initialSearch }: HomeClientProps) {
       <section className="grid grid-cols-1 gap-6 md:grid-cols-4">
         {/* Filters */}
         <aside className="md:col-span-1 space-y-6">
+
           {isLoading && <FiltersSkeleton />}
 
           {hasResults && (
@@ -153,6 +162,22 @@ export default function HomeClient({ initialSearch }: HomeClientProps) {
               />
             </>
           )}
+
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="
+                w-full rounded-md border border-border
+                bg-background px-3 py-2
+                text-sm text-text-muted
+                hover:bg-surface-muted
+                transition
+              "
+            >
+              Clear filters
+            </button>
+          )}
+
         </aside>
 
         {/* Results */}
@@ -184,29 +209,17 @@ export default function HomeClient({ initialSearch }: HomeClientProps) {
       </section>
 
       {/* Empty states */}
-      {hasNoResults && (
-        <div className="mt-8 rounded-xl bg-surface p-6 text-center">
-          <p className="text-sm text-text-muted">
-            No flights match your search criteria.
-          </p>
-        </div>
-      )}
+      {isIdle && <NoResults variant="idle" />}
 
-      {isIdle && (
-        <div className="mt-8 rounded-xl bg-surface p-6 text-center">
-          <p className="text-sm text-text-muted">
-            Start by searching for a flight.
-          </p>
-        </div>
-      )}
+      {hasNoResults && <NoResults variant="no-results" />}
 
-      {/* Error */}
       {isError && (
-        <p className="mt-6 text-sm text-danger">
-          {error ??
-            'Something went wrong while fetching flights.'}
-        </p>
+        <NoResults
+          variant="error"
+          message={error ?? undefined}
+        />
       )}
+
 
       {selectedFlight && (
         <FlightDetailsModal

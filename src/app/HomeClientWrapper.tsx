@@ -17,15 +17,16 @@ export default function HomeClientWrapper() {
     initialSearch.destination &&
     initialSearch.date
 
-  return (<HomeClient initialSearch={
-    hasInitialSearch
-      ? {
-        origin: initialSearch.origin!,
-        destination: initialSearch.destination!,
-        date: initialSearch.date!,
-      }
-      : null
-  }
-  />
+  return (
+    <HomeClient initialSearch={
+      hasInitialSearch
+        ? {
+          origin: initialSearch.origin!,
+          destination: initialSearch.destination!,
+          date: initialSearch.date!,
+        }
+        : null
+    }
+    />
   )
 }
