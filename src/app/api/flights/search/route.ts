@@ -2,16 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAccessToken } from '@/lib/amadeus'
 import { normalizeFlights } from '@/lib/normalizeFlights'
 
+const IATA_REGEX = /^[A-Z]{3}$/
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
 
-  const origin = searchParams.get('origin')
-  const destination = searchParams.get('destination')
+  const origin = searchParams.get('origin')?.trim().toUpperCase()
+  const destination = searchParams.get('destination')?.trim().toUpperCase()
   const departureDate = searchParams.get('date')
 
   if (!origin || !destination || !departureDate) {
     return NextResponse.json(
       { error: 'Missing required parameters' },
+      { status: 400 }
+    )
+  }
+
+  if (!IATA_REGEX.test(origin) || !IATA_REGEX.test(destination)) {
+    return NextResponse.json(
+      { error: 'Invalid IATA airport code' },
       { status: 400 }
     )
   }
@@ -37,12 +46,12 @@ export async function GET(req: NextRequest) {
     },
   })
 
-  const rawData = await res.json();
+  const rawData = await res.json()
 
-  if (!res.ok) {
+  if (!res.ok || !rawData?.data) {
     return NextResponse.json([], { status: 200 })
   }
 
-  const flights = normalizeFlights(rawData);
+  const flights = normalizeFlights(rawData)
   return NextResponse.json(flights)
 }

@@ -34,7 +34,11 @@ export function SearchForm({ onSearch, initialValues }: SearchFormProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    onSearch({ origin, destination, date })
+    onSearch({
+      origin: origin.trim().toUpperCase(),
+      destination: destination.trim().toUpperCase(),
+      date
+    })
   }
 
   const fieldClass =

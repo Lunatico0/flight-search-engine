@@ -1,36 +1,23 @@
 @import "tailwindcss";
 
-/* =========================
-   Theme tokens
-   ========================= */
+/* theme tokens  */
 
 @theme {
-  /* Backgrounds */
   --color-background: #0f1115;
-  /* main app bg */
   --color-surface: #161a22;
-  /* cards */
   --color-surface-muted: #1c2230;
-  /* hover / subtle */
 
-  /* Borders */
   --color-border: #2a3142;
 
-  /* Text */
   --color-text: #e5e7eb;
   --color-text-muted: #9ca3af;
 
-  /* Primary accent (warm tech) */
   --color-primary: #f59e0b;
-  /* amber */
   --color-primary-soft: #f59e0b1a;
-  /* amber / 10% */
 
-  /* States */
   --color-success: #22c55e;
   --color-danger: #ef4444;
 
-  /* Fonts */
   --font-sans: ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, "Apple Color Emoji", "Segoe UI Emoji";
@@ -40,54 +27,6 @@
     monospace;
 }
 
-/* @theme {
-  --color-surface: oklch(26% 0.035 240);
-  --color-surface-muted: oklch(30% 0.04 240);
-
-  --color-text: oklch(92% 0.01 240);
-  --color-text-muted: oklch(70% 0.02 240);
-  --color-text-soft: oklch(60% 0.02 240);
-
-  --color-border: oklch(35% 0.03 240);
-
-  --color-primary: oklch(75% 0.15 70);
-  --color-primary-soft: oklch(75% 0.15 70 / 0.15);
-
-  --color-success: #22c55e;
-  --color-danger: #ef4444;
-
-  --color-focus: oklch(78% 0.14 250);
-
-  --color-background: oklch(20% 0.03 240);
-} */
-
-/* @theme {
-  --color-background: #eaecf0;
-  --color-surface: #dde1e9;
-  --color-surface-muted: #1c2230;
-
-  --color-border: #2a3142;
-  --color-text: #14161a;
-  --color-text-muted: #9ca3af;
-
-  --color-primary: #f59f0a;
-  --color-primary-soft: #f59e0b1a;
-
-  --color-success: #22c55e;
-  --color-danger: #ef4444;
-
-  --font-sans: ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, "Apple Color Emoji", "Segoe UI Emoji";
-
-  --font-mono: ui-monospace, SFMono-Regular, Menlo,
-    Monaco, Consolas, "Liberation Mono", "Courier New",
-    monospace;
-} */
-
-/* =========================
-   Base styles
-   ========================= */
 html {
   font-family: ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,

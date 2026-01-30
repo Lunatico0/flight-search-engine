@@ -28,17 +28,18 @@ export function NoResults({
       : COPY[variant]
 
   return (
-    <div className="mt-8 flex flex-col items-center gap-4 rounded-xl bg-surface p-8 text-center">
-
+    <div>
       {/* Text */}
-      <p
-        className={`text-sm ${variant === 'error'
-          ? 'text-danger'
-          : 'text-text-muted'
-          }`}
-      >
-        {text}
-      </p>
+      <div className="mt-8 flex flex-col items-center gap-4 rounded-xl bg-surface p-8 text-center">
+        <p
+          className={`text-sm ${variant === 'error'
+            ? 'text-danger'
+            : 'text-text-muted'
+            }`}
+        >
+          {text}
+        </p>
+      </div>
 
       {/* SVG */}
       <AirplaneIcon className={`mx-auto h-40 w-40 md:h-72 md:w-72 ${variant === 'idle' ? 'text-text' : 'text-text-muted'}`} />
