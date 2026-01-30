@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { useFlights } from '@/hooks/useFlights'
 import { useFilteredFlights } from '@/hooks/useFilteredFlights'
 import { buildPriceChartData } from '@/lib/priceChart'
+import { Flight } from '@/types/flight'
 
 import { SearchForm } from '@/components/SearchForm/SearchForm'
 import { FlightList } from '@/components/FlightList/FlightList'
@@ -14,12 +15,25 @@ import { AirlinesFilter } from '@/components/Filters/AirlinesFilter'
 import { PriceFilter } from '@/components/Filters/PriceFilter'
 import { StopFilter } from '@/components/Filters/StopsFilter'
 import { FiltersSkeleton } from '@/components/Filters/FiltersSkeleton'
-import { SortSelect } from '../components/SortSelect'
+import { SortSelect } from '@/components/SortSelect'
+import dynamic from 'next/dynamic'
+const FlightDetailsModal = dynamic(
+  () => import('../components/FlightDetailsModal').then(m => m.FlightDetailsModal),
+  { ssr: false }
+)
 
-export default function Home() {
+type HomeClientProps = {
+  initialSearch: {
+    origin: string
+    destination: string
+    date: string
+  } | null
+}
+
+export default function HomeClient({ initialSearch }: HomeClientProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const hasHydratedFromUrl = useRef(false)
+  const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null)
 
   const {
     flights,
@@ -32,10 +46,18 @@ export default function Home() {
     searchFlights,
   } = useFlights()
 
+  // 🔑 hidrata búsqueda inicial desde URL (una sola vez)
+  useEffect(() => {
+    if (!initialSearch) return
+    if (hasHydratedFromUrl.current) return
+
+    searchFlights(initialSearch)
+    hasHydratedFromUrl.current = true
+  }, [initialSearch, searchFlights])
+
   const searchKey = lastSearch
     ? `${lastSearch.origin}-${lastSearch.destination}-${lastSearch.date}`
     : null
-
 
   const {
     filteredFlights,
@@ -49,32 +71,7 @@ export default function Home() {
     setSort,
   } = useFilteredFlights(flights, searchKey)
 
-  /* ------------------------------------------------------------------
-   * URL → STATE (hydration) — runs ONCE
-   * ------------------------------------------------------------------ */
-  useEffect(() => {
-    if (hasHydratedFromUrl.current) return
-
-    const origin = searchParams.get('origin')
-    const destination = searchParams.get('destination')
-    const date = searchParams.get('date')
-
-    if (origin && destination && date) {
-      searchFlights({ origin, destination, date })
-    }
-
-    hasHydratedFromUrl.current = true
-  }, [
-    searchParams,
-    searchFlights,
-    setStops,
-    toggleAirline,
-    setPriceRange,
-  ])
-
-  /* ------------------------------------------------------------------
-   * STATE → URL (sync)
-   * ------------------------------------------------------------------ */
+  // STATE → URL
   useEffect(() => {
     if (!isSuccess || !lastSearch) return
 
@@ -98,18 +95,16 @@ export default function Home() {
     router.replace(`?${params.toString()}`, { scroll: false })
   }, [isSuccess, lastSearch, filters, router])
 
-  /* ------------------------------------------------------------------
-   * Derived state
-   * ------------------------------------------------------------------ */
+  // Derived state
   const hasResults = isSuccess && filteredFlights.length > 0
   const hasNoResults = isSuccess && filteredFlights.length === 0
 
   const chartData = useMemo(
     () =>
       hasResults
-        ? buildPriceChartData(filteredFlights)
+        ? buildPriceChartData(sortedFlights)
         : [],
-    [hasResults, filteredFlights]
+    [hasResults, sortedFlights]
   )
 
   const availableAirlines = useMemo(
@@ -120,28 +115,14 @@ export default function Home() {
     [isSuccess, flights]
   )
 
-  const searchFormValues = useMemo(() => {
-    const origin = searchParams.get('origin')
-    const destination = searchParams.get('destination')
-    const date = searchParams.get('date')
-
-    if (!origin || !destination || !date) return undefined
-
-    return { origin, destination, date }
-  }, [searchParams])
-
-  /* ------------------------------------------------------------------
-   * Render
-   * ------------------------------------------------------------------ */
   return (
     <>
       {/* Search */}
       <section className="mb-8">
         <SearchForm
           onSearch={searchFlights}
-          initialValues={searchFormValues}
+          initialValues={initialSearch ?? undefined}
         />
-
       </section>
 
       {/* Content */}
@@ -152,10 +133,7 @@ export default function Home() {
 
           {hasResults && (
             <>
-              <StopFilter
-                value={filters.stops}
-                onChange={setStops}
-              />
+              <StopFilter value={filters.stops} onChange={setStops} />
 
               {priceBounds.min < priceBounds.max && (
                 <PriceFilter
@@ -190,9 +168,16 @@ export default function Home() {
             <>
               <PriceChart data={chartData} />
 
-              <SortSelect value={sort} onChange={setSort} length={sortedFlights.length} />
+              <SortSelect
+                value={sort}
+                onChange={setSort}
+                length={sortedFlights.length}
+              />
 
-              <FlightList flights={sortedFlights} />
+              <FlightList
+                flights={sortedFlights}
+                onSelectFlight={setSelectedFlight}
+              />
             </>
           )}
         </div>
@@ -222,6 +207,14 @@ export default function Home() {
             'Something went wrong while fetching flights.'}
         </p>
       )}
+
+      {selectedFlight && (
+        <FlightDetailsModal
+          flight={selectedFlight}
+          onClose={() => setSelectedFlight(null)}
+        />
+      )}
+
     </>
   )
 }

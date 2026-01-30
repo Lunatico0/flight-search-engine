@@ -1,18 +1,46 @@
 import { Flight } from '@/types/flight'
-import { formatDateTime, formatDuration } from '../../lib/formatters'
+import {
+  formatDateTime,
+  formatDuration,
+} from '@/lib/formatters'
 
 type FlightCardProps = {
   flight: Flight
+  onSelect?: (flight: Flight) => void
 }
 
-export function FlightCard({ flight }: FlightCardProps) {
+export function FlightCard({
+  flight,
+  onSelect,
+}: FlightCardProps) {
   const stopsLabel =
     flight.stops === 0
       ? 'Non-stop'
       : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`
 
+  function handleClick() {
+    onSelect?.(flight)
+  }
+
   return (
-    <div className="flex flex-col gap-4 rounded-xl bg-surface p-4 transition hover:bg-surface-muted md:flex-row md:items-center md:justify-between">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleClick()
+        }
+      }}
+      className="
+        cursor-pointer
+        flex flex-col gap-4 rounded-xl bg-surface p-4
+        transition
+        hover:bg-surface-muted
+        focus:outline-none focus:ring-2 focus:ring-primary
+        md:flex-row md:items-center md:justify-between
+      "
+    >
       {/* Airline + times */}
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-text">
@@ -20,10 +48,10 @@ export function FlightCard({ flight }: FlightCardProps) {
         </p>
 
         <p className="mt-0.5 text-xs text-text-muted">
-          {formatDateTime(flight.departureTime, { withWeekday: true })}
-          {' '}
-          →{' '}
-          {formatDateTime(flight.arrivalTime)}
+          {formatDateTime(flight.departureTime, {
+            withWeekday: true,
+          })}{' '}
+          → {formatDateTime(flight.arrivalTime)}
         </p>
       </div>
 

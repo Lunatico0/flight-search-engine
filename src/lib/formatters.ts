@@ -1,6 +1,19 @@
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  day: '2-digit',
+  month: 'short',
+})
 
-//  "2026-02-03T15:25:00" → "03 Feb · 15:25"
-//  withWeekday → "Tue 03 Feb · 15:25"
+const DATE_WITH_WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short',
+  day: '2-digit',
+  month: 'short',
+})
+
+const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
 
 export function formatDateTime(
   iso: string,
@@ -10,43 +23,21 @@ export function formatDateTime(
 ): string {
   const date = new Date(iso)
 
-  const dateFormatter = new Intl.DateTimeFormat('en-US', {
-    day: '2-digit',
-    month: 'short',
-    ...(options?.withWeekday && { weekday: 'short' }),
-  })
+  const datePart = options?.withWeekday
+    ? DATE_WITH_WEEKDAY_FORMATTER.format(date)
+    : DATE_FORMATTER.format(date)
 
-  const timeFormatter = new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
+  const timePart = TIME_FORMATTER.format(date)
 
-  return `${dateFormatter.format(date)} · ${timeFormatter.format(date)}`
+  return `${datePart} · ${timePart}`
 }
 
-
-// Formats an ISO datetime string into time only.
-// Example:
 // "2026-02-03T06:10:00" → "06:10"
-
 export function formatTime(iso: string): string {
-  const date = new Date(iso)
-
-  return new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date)
+  return TIME_FORMATTER.format(new Date(iso))
 }
-
-
-// "PT29H55M" → "29h 55m"
-// "PT14H" → "14h"
-// "PT45M" → "45m"
 
 export function formatDuration(isoDuration: string): string {
-  // Match hours and minutes from ISO 8601 duration
   const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/)
 
   if (!match) return isoDuration
@@ -54,10 +45,11 @@ export function formatDuration(isoDuration: string): string {
   const hours = match[1] ? Number(match[1]) : 0
   const minutes = match[2] ? Number(match[2]) : 0
 
-  const parts: string[] = []
+  if (hours === 0 && minutes === 0) return '0m'
 
+  const parts: string[] = []
   if (hours > 0) parts.push(`${hours}h`)
   if (minutes > 0) parts.push(`${minutes}m`)
 
-  return parts.join(' ') || '0m'
+  return parts.join(' ')
 }

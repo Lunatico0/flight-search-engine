@@ -1,5 +1,4 @@
-import { Suspense } from 'react'
-import HomeClient from './HomeClient'
+import HomeClientWrapper from './HomeClientWrapper'
 
 export default function Page() {
   return (
@@ -12,9 +11,7 @@ export default function Page() {
           </p>
         </header>
 
-        <Suspense fallback={<p className="text-text-muted">Loading...</p>}>
-          <HomeClient />
-        </Suspense>
+        <HomeClientWrapper />
       </div>
     </main>
   )

@@ -5,11 +5,13 @@ import { FlightCardSkeleton } from './FlightCardSkeleton'
 type FlightListProps = {
   flights: Flight[]
   isLoading?: boolean
+  onSelectFlight?: (flight: Flight) => void
 }
 
 export function FlightList({
   flights,
   isLoading = false,
+  onSelectFlight,
 }: FlightListProps) {
   if (isLoading) {
     return (
@@ -35,6 +37,7 @@ export function FlightList({
         <FlightCard
           key={flight.id}
           flight={flight}
+          onSelect={onSelectFlight}
         />
       ))}
     </div>
