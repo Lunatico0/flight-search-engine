@@ -12,7 +12,7 @@ export default function Page() {
           </p>
         </header>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<p className="text-text-muted">Loading...</p>}>
           <HomeClientWrapper />
         </Suspense>
       </div>
