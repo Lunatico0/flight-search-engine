@@ -1,17 +1,24 @@
 # ✈️ Flight Search Engine
 
-A modern, responsive flight search engine built as a technical assessment.
-The goal of this project is to demonstrate **frontend architecture, state management, UX decisions, and data visualization**, rather than to replicate an existing product like Google Flights.
+A modern, responsive flight search engine built as a **technical assessment**.
 
-The application allows users to search flights, apply multiple filters simultaneously, visualize price trends in real time, and share searches via URL.
+This project focuses on **frontend architecture, state management, UX decisions, and data visualization**, rather than replicating a full commercial product like Google Flights.
+
+The application allows users to search flights, apply multiple filters and sorting strategies, visualize price trends in real time, inspect flight details, and share searches via URL.
 
 ---
 
 ## 🚀 Live Features
 
-### 🔎 Search
-- Search flights by **origin**, **destination**, and **date**
-- Search state is persisted in the URL (deep-linkable)
+### 🔎 Flight Search
+- Search flights by **origin (IATA)**, **destination (IATA)**, and **date**
+- Input normalization:
+  - Trims whitespace
+  - Uppercases airport codes
+  - Validates IATA format (`AAA`)
+- Search state is **persisted in the URL** (deep-linkable)
+
+---
 
 ### 🎛️ Advanced Filtering
 - Filter simultaneously by:
@@ -21,27 +28,66 @@ The application allows users to search flights, apply multiple filters simultane
 - Filters update:
   - Flight list
   - Price chart
-  in real time
+  **in real time**
+- Filters reset automatically on new searches to avoid stale state
+- Manual **“Clear filters”** action available
+
+---
+
+### 🔃 Sorting
+Flights can be sorted by:
+- Price (low → high / high → low)
+- Duration (shortest / longest)
+- Departure time (earliest / latest)
+- Airline name (A–Z / Z–A)
+
+Sorting is applied **client-side**, without refetching.
+
+---
 
 ### 📈 Price Visualization
 - Dynamic price chart showing **average price per airline**
-- Updates instantly as filters change
+- Updates instantly as filters or sorting change
+- No additional API calls required
+
+---
+
+### 🧾 Flight Details
+- Each flight card is fully clickable
+- Opens a **details modal** with:
+  - Airline
+  - Schedule
+  - Stops
+  - Duration
+  - Price
+- Modal behavior:
+  - Click outside to close
+  - ESC key to close
+  - Client-only rendering to avoid SSR issues
+
+---
 
 ### 🔗 URL Persistence
 - Search and filters are synced with the URL
 - Copy/paste a URL and the app restores:
   - Search inputs
   - Filters
+  - Sorting
   - Results
+
+---
 
 ### 📱 Responsive UI
 - Fully usable on mobile and desktop
-- Adaptive layout with skeleton loading states
+- Adaptive layout
+- Skeleton loading states prevent layout shifts
+
+---
 
 ### ♿ Accessibility
 - Semantic HTML (`fieldset`, `legend`, labels)
-- ARIA attributes for filters and sliders
-- Keyboard-friendly interactions
+- Keyboard-accessible cards and controls
+- Focus states and ARIA-friendly patterns
 
 ---
 
@@ -67,38 +113,57 @@ UI (filters, list, chart)
 
 ### 1. App Router + Client Components
 - Built using **Next.js App Router**
-- Client components are used where interaction and state are required
-- API communication is isolated in server routes
+- Client components used only where interaction/state is required
+- Server logic isolated in API routes
+
+---
 
 ### 2. Clear Separation of Concerns
 - **`useFlights`**
   - Handles fetching, loading/error states
-  - Manages request cancellation and stale responses
+  - Manages request cancellation
+  - Prevents stale responses
 - **`useFilteredFlights`**
   - Pure client-side derived state
-  - Syncs filters with URL
-  - Resets intelligently when dataset changes
+  - Handles filters, sorting, and resets
+  - No side effects or network calls
 
-### 3. URL as Source of Truth (Initial State)
-- Search and filters are restored from query params on first load
+---
+
+### 3. URL as Initial Source of Truth
+- On first load, search state is hydrated from URL
 - After hydration, local state takes over
-- This enables:
+- Enables:
   - Shareable links
   - Predictable UX
-  - Easier debugging
+  - Easy debugging
 
-### 4. No Overfetching
-- Filters are applied client-side
-- API is called **only** on search changes
-- Charts and lists react instantly without refetching
+---
+
+### 4. Defensive Backend Design
+- API validates:
+  - Required parameters
+  - IATA format
+- Input normalization (`trim`, `uppercase`)
+- Graceful handling of:
+  - Empty API responses
+  - External API failures
+- Frontend never crashes on malformed data
+
+---
+
+### 5. No Overfetching
+- Filters and sorting are applied **client-side**
+- API is called **only** when the search changes
+- Chart and list update instantly
 
 ---
 
 ## 🛠️ Tech Stack
 
 - **Next.js** (App Router)
-- **TypeScript**
 - **React**
+- **TypeScript**
 - **Tailwind CSS**
 - **Recharts** (data visualization)
 - **Amadeus Self-Service API (Test Environment)**
@@ -108,7 +173,7 @@ UI (filters, list, chart)
 ## 🔐 Backend & API
 
 - Uses a **Next.js API route** (`/api/flights/search`)
-- API key is kept server-side
+- API credentials are kept server-side
 - Responses are:
   - Normalized
   - Simplified
@@ -118,16 +183,17 @@ UI (filters, list, chart)
 
 ## 🧪 Loading & UX States
 
-- Skeletons for:
-  - Filters
-  - Flight list
-  - Price chart
-- Explicit states:
-  - Idle (first load)
-  - Loading
-  - Success
-  - Empty results
-  - Error
+Explicit UI states:
+- Idle (first load)
+- Loading
+- Success
+- Empty results
+- Error
+
+Skeletons are used for:
+- Filters
+- Flight list
+- Price chart
 
 This avoids layout shifts and improves perceived performance.
 
@@ -175,14 +241,17 @@ Open:
 ```
 src/
 ├─ app/
-│  ├─ globals.css
 │  ├─ page.tsx
 │  ├─ layout.tsx
+│  ├─ HomeClient.tsx
+│  ├─ HomeClientWrapper.tsx
 │  └─ api/flights/search/route.ts
 ├─ components/
 │  ├─ SearchForm
 │  ├─ Filters
+│  ├─ SortSelect
 │  ├─ FlightList
+│  ├─ FlightDetailsModal
 │  └─ PriceChart
 ├─ hooks/
 │  ├─ useFlights
@@ -190,11 +259,11 @@ src/
 ├─ lib/
 │  ├─ amadeus
 │  ├─ normalizeFlights
+│  ├─ formatters
 │  └─ priceChart
 └─ types/
-   ├─ filters.ts
    ├─ flight.ts
-   ├─ index.ts
+   ├─ filters.ts
    └─ range.ts
 ```
 
@@ -203,11 +272,11 @@ src/
 ## 🎯 What This Project Demonstrates
 
 - Production-grade React patterns
-- State synchronization with URL
-- Complex derived state without external libraries
+- URL-synchronized state
+- Complex derived state without external state libraries
 - Thoughtful UX and accessibility
+- Defensive backend integration
 - Clean separation between data, logic, and UI
-- Real-world async lifecycle handling
 
 ---
 
@@ -216,10 +285,11 @@ src/
 This project was built as a **technical assessment**, with emphasis on:
 - Code clarity
 - Architectural decisions
-- User experience
 - Maintainability
+- User experience
+- Real-world edge cases
 
-It is not intended to be a full commercial flight booking product.
+It is **not** intended to be a full commercial flight booking product.
 
 ---
 
