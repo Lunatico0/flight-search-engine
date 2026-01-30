@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Patricio Pittana' }],
   creator: 'Patricio Pittana',
 
-  metadataBase: new URL('https://flight-search.vercel.app'), // luego lo ajustás al dominio real
+  metadataBase: new URL('https://flightsearch-challenge.vercel.app/'),
 
   openGraph: {
     title: 'Flight Search Engine',
@@ -47,14 +47,14 @@ export const metadata: Metadata = {
       'Search, filter and analyze flight prices across airlines.',
   },
 
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-  },
-
   icons: {
     icon: '/AirPlane.svg',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({
