@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import { useFlights } from '@/hooks/useFlights'
 import { useFilteredFlights } from '@/hooks/useFilteredFlights'
@@ -12,50 +13,140 @@ import { PriceChart } from '@/components/PriceChart/PriceChart'
 import { AirlinesFilter } from '@/components/Filters/AirlinesFilter'
 import { PriceFilter } from '@/components/Filters/PriceFilter'
 import { StopFilter } from '@/components/Filters/StopsFilter'
-import { FiltersSkeleton } from '../components/Filters/FiltersSkeleton'
+import { FiltersSkeleton } from '@/components/Filters/FiltersSkeleton'
 
 export default function Home() {
-  const { flights, isLoading, error, searchFlights } = useFlights()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const hasHydratedFromUrl = useRef(false)
+
+  const {
+    flights,
+    lastSearch,
+    isIdle,
+    isLoading,
+    isSuccess,
+    isError,
+    error,
+    searchFlights,
+  } = useFlights()
 
   const {
     filteredFlights,
     filters,
+    priceBounds,
     toggleAirline,
     setPriceRange,
     setStops,
   } = useFilteredFlights(flights)
 
+  /* ------------------------------------------------------------------
+   * URL → STATE (hydration) — runs ONCE
+   * ------------------------------------------------------------------ */
+  useEffect(() => {
+    if (hasHydratedFromUrl.current) return
+
+    const origin = searchParams.get('origin')
+    const destination = searchParams.get('destination')
+    const date = searchParams.get('date')
+
+    if (origin && destination && date) {
+      searchFlights({ origin, destination, date })
+    }
+
+    const stops = searchParams.get('stops')
+    const airlines = searchParams.get('airlines')
+    const minPrice = searchParams.get('minPrice')
+    const maxPrice = searchParams.get('maxPrice')
+
+    if (stops) {
+      setStops(stops === 'any' ? 'any' : (Number(stops) as any))
+    }
+
+    if (airlines) {
+      airlines.split(',').forEach(toggleAirline)
+    }
+
+    if (minPrice && maxPrice) {
+      setPriceRange(Number(minPrice), Number(maxPrice))
+    }
+
+    hasHydratedFromUrl.current = true
+  }, [
+    searchParams,
+    searchFlights,
+    setStops,
+    toggleAirline,
+    setPriceRange,
+  ])
+
+  /* ------------------------------------------------------------------
+   * STATE → URL (sync)
+   * ------------------------------------------------------------------ */
+  useEffect(() => {
+    if (!isSuccess || !lastSearch) return
+
+    const params = new URLSearchParams({
+      origin: lastSearch.origin,
+      destination: lastSearch.destination,
+      date: lastSearch.date,
+    })
+
+    if (filters.stops !== 'any') {
+      params.set('stops', String(filters.stops))
+    }
+
+    if (filters.airlines.length > 0) {
+      params.set('airlines', filters.airlines.join(','))
+    }
+
+    params.set('minPrice', String(filters.priceRange.min))
+    params.set('maxPrice', String(filters.priceRange.max))
+
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }, [isSuccess, lastSearch, filters, router])
+
+  /* ------------------------------------------------------------------
+   * Derived state
+   * ------------------------------------------------------------------ */
+  const hasResults = isSuccess && filteredFlights.length > 0
+  const hasNoResults = isSuccess && filteredFlights.length === 0
+
   const chartData = useMemo(
-    () => buildPriceChartData(filteredFlights),
-    [filteredFlights]
+    () =>
+      hasResults
+        ? buildPriceChartData(filteredFlights)
+        : [],
+    [hasResults, filteredFlights]
   )
 
   const availableAirlines = useMemo(
-    () => Array.from(new Set(flights.map((f) => f.airline))),
-    [flights]
+    () =>
+      isSuccess
+        ? Array.from(new Set(flights.map((f) => f.airline)))
+        : [],
+    [isSuccess, flights]
   )
 
-  const hasResults = flights.length > 0
+  const searchFormValues = useMemo(() => {
+    const origin = searchParams.get('origin')
+    const destination = searchParams.get('destination')
+    const date = searchParams.get('date')
 
-  const { minPrice, maxPrice } = useMemo(() => {
-    if (flights.length === 0) {
-      return { minPrice: null, maxPrice: null }
-    }
+    if (!origin || !destination || !date) return undefined
 
-    const prices = flights.map((f) => f.price)
+    return { origin, destination, date }
+  }, [searchParams])
 
-    return {
-      minPrice: Math.min(...prices),
-      maxPrice: Math.max(...prices),
-    }
-  }, [flights])
-
+  /* ------------------------------------------------------------------
+   * Render
+   * ------------------------------------------------------------------ */
   return (
     <main className="min-h-screen bg-background text-text">
       <div className="mx-auto max-w-7xl px-4 py-8">
         {/* Header */}
         <header className="mb-8">
-          <h1 className="text-3xl font-semibold text-text">
+          <h1 className="text-3xl font-semibold">
             Flight Search
           </h1>
           <p className="mt-1 text-sm text-text-muted">
@@ -65,36 +156,36 @@ export default function Home() {
 
         {/* Search */}
         <section className="mb-8">
-          <SearchForm onSearch={searchFlights} />
+          <SearchForm
+            onSearch={searchFlights}
+            initialValues={searchFormValues}
+          />
+
         </section>
 
         {/* Content */}
         <section className="grid grid-cols-1 gap-6 md:grid-cols-4">
           {/* Filters */}
-          <aside className="space-y-6 md:col-span-1">
-            {/* Loading state → skeleton */}
+          <aside className="md:col-span-1 space-y-6">
             {isLoading && <FiltersSkeleton />}
 
-            {/* Results loaded → real filters */}
-            {!isLoading && hasResults && (
+            {hasResults && (
               <>
                 <StopFilter
                   value={filters.stops}
                   onChange={setStops}
                 />
 
-                {minPrice !== null &&
-                  maxPrice !== null &&
-                  minPrice < maxPrice && (
-                    <PriceFilter
-                      min={minPrice}
-                      max={maxPrice}
-                      value={filters.priceRange}
-                      onChange={(range) =>
-                        setPriceRange(range.min, range.max)
-                      }
-                    />
-                  )}
+                {priceBounds.min < priceBounds.max && (
+                  <PriceFilter
+                    min={priceBounds.min}
+                    max={priceBounds.max}
+                    value={filters.priceRange}
+                    onChange={(range) =>
+                      setPriceRange(range.min, range.max)
+                    }
+                  />
+                )}
 
                 <AirlinesFilter
                   airlines={availableAirlines}
@@ -106,23 +197,45 @@ export default function Home() {
           </aside>
 
           {/* Results */}
-          <div className={`space-y-6 md:col-span-3`}>
-            <PriceChart
-              data={chartData}
-              isLoading={isLoading}
-            />
+          <div className="md:col-span-3 space-y-6">
+            {isLoading && (
+              <>
+                <PriceChart data={[]} isLoading />
+                <FlightList flights={[]} isLoading />
+              </>
+            )}
 
-            <FlightList
-              flights={filteredFlights}
-              isLoading={isLoading}
-            />
+            {hasResults && (
+              <>
+                <PriceChart data={chartData} />
+                <FlightList flights={filteredFlights} />
+              </>
+            )}
           </div>
         </section>
 
+        {/* Empty states */}
+        {hasNoResults && (
+          <div className="mt-8 rounded-xl bg-surface p-6 text-center">
+            <p className="text-sm text-text-muted">
+              No flights match your search criteria.
+            </p>
+          </div>
+        )}
+
+        {isIdle && (
+          <div className="mt-8 rounded-xl bg-surface p-6 text-center">
+            <p className="text-sm text-text-muted">
+              Start by searching for a flight.
+            </p>
+          </div>
+        )}
+
         {/* Error */}
-        {error && (
+        {isError && (
           <p className="mt-6 text-sm text-danger">
-            Something went wrong while fetching flights.
+            {error ??
+              'Something went wrong while fetching flights.'}
           </p>
         )}
       </div>
