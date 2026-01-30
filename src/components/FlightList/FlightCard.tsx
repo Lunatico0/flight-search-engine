@@ -1,4 +1,5 @@
 import { Flight } from '@/types/flight'
+import { formatDateTime, formatDuration } from '../../lib/formatters'
 
 type FlightCardProps = {
   flight: Flight
@@ -19,7 +20,10 @@ export function FlightCard({ flight }: FlightCardProps) {
         </p>
 
         <p className="mt-0.5 text-xs text-text-muted">
-          {flight.departureTime} → {flight.arrivalTime}
+          {formatDateTime(flight.departureTime, { withWeekday: true })}
+          {' '}
+          →{' '}
+          {formatDateTime(flight.arrivalTime)}
         </p>
       </div>
 
@@ -30,7 +34,7 @@ export function FlightCard({ flight }: FlightCardProps) {
         </span>
 
         <span className="rounded-full bg-background px-3 py-1">
-          {flight.duration}
+          {formatDuration(flight.duration)}
         </span>
       </div>
 
