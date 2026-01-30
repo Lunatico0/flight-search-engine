@@ -34,6 +34,8 @@ export function PriceChart({
     )
   }
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+
   return (
     <div className="rounded-xl bg-surface p-4">
       <h2 className="mb-4 text-sm font-medium text-text-muted">
@@ -41,7 +43,10 @@ export function PriceChart({
       </h2>
 
       <ResponsiveContainer width="100%" className='relative -pl-8' height={280}>
-        <LineChart data={data}>
+        <LineChart
+          data={data}
+          margin={{ left: isMobile ? 8 : 24 }}
+        >
           <XAxis
             dataKey="airline"
             tick={{ fontSize: 12 }}
@@ -49,6 +54,7 @@ export function PriceChart({
           />
 
           <YAxis
+            width={isMobile ? 32 : 48}
             tick={{ fontSize: 12 }}
             stroke="var(--color-border)"
             tickFormatter={(value) => `$${value}`}

@@ -14,6 +14,7 @@ import { AirlinesFilter } from '@/components/Filters/AirlinesFilter'
 import { PriceFilter } from '@/components/Filters/PriceFilter'
 import { StopFilter } from '@/components/Filters/StopsFilter'
 import { FiltersSkeleton } from '@/components/Filters/FiltersSkeleton'
+import { SortSelect } from '../components/SortSelect'
 
 export default function Home() {
   const router = useRouter()
@@ -40,9 +41,12 @@ export default function Home() {
     filteredFlights,
     filters,
     priceBounds,
+    sort,
+    sortedFlights,
     toggleAirline,
     setPriceRange,
     setStops,
+    setSort,
   } = useFilteredFlights(flights, searchKey)
 
   /* ------------------------------------------------------------------
@@ -185,7 +189,10 @@ export default function Home() {
           {hasResults && (
             <>
               <PriceChart data={chartData} />
-              <FlightList flights={filteredFlights} />
+
+              <SortSelect value={sort} onChange={setSort} length={sortedFlights.length} />
+
+              <FlightList flights={sortedFlights} />
             </>
           )}
         </div>

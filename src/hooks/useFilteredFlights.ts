@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Flight } from '@/types/flight'
 import { FlightFilters, StopsFilter } from '@/types/filters'
 
+/* ------------------------------------------------------------------
+ * Helpers
+ * ------------------------------------------------------------------ */
+
 function getPriceBounds(flights: Flight[]) {
   if (flights.length === 0) {
     return { min: 0, max: 0 }
@@ -15,48 +19,72 @@ function getPriceBounds(flights: Flight[]) {
   }
 }
 
-function parseFiltersFromUrl(
-  bounds: { min: number; max: number }
-): FlightFilters {
-  if (typeof window === 'undefined') {
-    return {
-      stops: 'any',
-      priceRange: bounds,
-      airlines: [],
-    }
-  }
+/* ------------------------------------------------------------------
+ * Sorting
+ * ------------------------------------------------------------------ */
 
-  const params = new URLSearchParams(window.location.search)
+export type SortKey =
+  | 'price'
+  | 'duration'
+  | 'departure'
+  | 'airline'
 
-  const stopsParam = params.get('stops')
-  const minPriceParam = params.get('minPrice')
-  const maxPriceParam = params.get('maxPrice')
-  const airlinesParam = params.get('airlines')
+export type SortOrder = 'asc' | 'desc'
 
-  const stops: StopsFilter =
-    stopsParam === '0' || stopsParam === '1' || stopsParam === '2'
-      ? (Number(stopsParam) as StopsFilter)
-      : 'any'
-
-  const min =
-    minPriceParam !== null
-      ? Math.max(Number(minPriceParam), bounds.min)
-      : bounds.min
-
-  const max =
-    maxPriceParam !== null
-      ? Math.min(Number(maxPriceParam), bounds.max)
-      : bounds.max
-
-  const airlines =
-    airlinesParam?.split(',').filter(Boolean) ?? []
-
-  return {
-    stops,
-    priceRange: { min, max },
-    airlines,
-  }
+export type SortState = {
+  key: SortKey
+  order: SortOrder
 }
+
+function sortFlights(
+  flights: Flight[],
+  sort: SortState
+) {
+  const sorted = [...flights]
+
+  sorted.sort((a, b) => {
+    let aValue: number | string
+    let bValue: number | string
+
+    switch (sort.key) {
+      case 'price':
+        aValue = a.price
+        bValue = b.price
+        break
+
+      case 'duration': {
+        const toMinutes = (d: string) => {
+          const h = d.match(/(\d+)H/)?.[1] ?? 0
+          const m = d.match(/(\d+)M/)?.[1] ?? 0
+          return Number(h) * 60 + Number(m)
+        }
+        aValue = toMinutes(a.duration)
+        bValue = toMinutes(b.duration)
+        break
+      }
+
+      case 'departure':
+        aValue = new Date(a.departureTime).getTime()
+        bValue = new Date(b.departureTime).getTime()
+        break
+
+      case 'airline':
+        aValue = a.airline
+        bValue = b.airline
+        break
+    }
+
+    if (aValue < bValue) return sort.order === 'asc' ? -1 : 1
+    if (aValue > bValue) return sort.order === 'asc' ? 1 : -1
+    return 0
+  })
+
+  return sorted
+}
+
+/* ------------------------------------------------------------------
+ * Hook
+ * ------------------------------------------------------------------ */
 
 export function useFilteredFlights(
   flights: Flight[],
@@ -79,7 +107,12 @@ export function useFilteredFlights(
     airlines: [],
   })
 
-  /* ---------------- Hydrate from URL (once) ---------------- */
+  const [sort, setSort] = useState<SortState>({
+    key: 'price',
+    order: 'asc',
+  })
+
+  /* ---------------- Reset on new search ---------------- */
 
   useEffect(() => {
     if (!searchKey) return
@@ -90,9 +123,14 @@ export function useFilteredFlights(
       priceRange: priceBounds,
       airlines: [],
     })
-  }, [searchKey, priceBounds.min, priceBounds.max])
 
-  /* ---------------- Reset on new dataset ---------------- */
+    setSort({
+      key: 'price',
+      order: 'asc',
+    })
+  }, [searchKey, priceBounds.min, priceBounds.max, flights.length])
+
+  /* ---------------- Clamp price range on bounds change ---------------- */
 
   useEffect(() => {
     if (!hasHydratedFromUrl.current) return
@@ -105,7 +143,6 @@ export function useFilteredFlights(
       },
     }))
   }, [priceBounds.min, priceBounds.max])
-
 
   /* ---------------- Filtering logic ---------------- */
 
@@ -137,6 +174,13 @@ export function useFilteredFlights(
       return true
     })
   }, [flights, filters])
+
+  /* ---------------- Sorting logic ---------------- */
+
+  const sortedFlights = useMemo(
+    () => sortFlights(filteredFlights, sort),
+    [filteredFlights, sort]
+  )
 
   /* ---------------- Actions ---------------- */
 
@@ -176,12 +220,18 @@ export function useFilteredFlights(
   }
 
   return {
+    // data
     filters,
     filteredFlights,
+    sortedFlights,
     priceBounds,
+    sort,
+
+    // actions
     setStops,
     setPriceRange,
     toggleAirline,
     resetFilters,
+    setSort,
   }
 }
